@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import Fuse from "fuse.js";
@@ -85,21 +91,24 @@ export default function Home() {
   );
 
   const availCache = useRef<Record<string, boolean>>({}).current;
-  async function isVenueAvailable(v: Venue) {
-    if (!checkIn || !checkOut) return true;
-    if (availCache[v.id] !== undefined) return availCache[v.id];
-    try {
-      const full = await fetchVenueById(v.id, { bookings: true });
-      const clash = full.bookings?.some((b: any) =>
-        overlap(new Date(b.dateFrom), new Date(b.dateTo), checkIn, checkOut)
-      );
-      availCache[v.id] = !clash;
-      return !clash;
-    } catch {
-      availCache[v.id] = true;
-      return true;
-    }
-  }
+  const isVenueAvailable = useCallback(
+    async (v: Venue) => {
+      if (!checkIn || !checkOut) return true;
+      if (availCache[v.id] !== undefined) return availCache[v.id];
+      try {
+        const full = await fetchVenueById(v.id, { bookings: true });
+        const clash = full.bookings?.some((b: any) =>
+          overlap(new Date(b.dateFrom), new Date(b.dateTo), checkIn, checkOut)
+        );
+        availCache[v.id] = !clash;
+        return !clash;
+      } catch {
+        availCache[v.id] = true;
+        return true;
+      }
+    },
+    [checkIn, checkOut, availCache]
+  );
 
   const [suggestions, setSuggestions] = useState<Venue[]>([]);
   const [showSug, setShowSug] = useState(false);
