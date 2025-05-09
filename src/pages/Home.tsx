@@ -154,7 +154,7 @@ export default function Home() {
       setDateFiltered(baseFiltered.filter((_, i) => flags[i]));
       setChecking(false);
     });
-  }, [baseFiltered, checkIn, checkOut]);
+  }, [baseFiltered, checkIn, checkOut, isVenueAvailable]);
 
   // sort
   const sorted = useMemo(() => {

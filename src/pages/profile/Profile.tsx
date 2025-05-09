@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Camera, User } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { fetchVenuesByProfile, updateAvatarUrl } from "../../api/venues";
-import { Venue } from "../../rulesets/types";
+import { updateAvatarUrl } from "../../api/venues";
 
 export default function Profile() {
   const {
@@ -17,21 +16,6 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState(avatarUrl ?? "");
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-
-  const [venues, setVenues] = useState<Venue[]>([]);
-
-  useEffect(() => {
-    if (!token || !venueManager) return;
-    (async () => {
-      try {
-        const data = await fetchVenuesByProfile(profileName, {
-          owner: true,
-          token,
-        });
-        setVenues(data);
-      } catch {}
-    })();
-  }, [profileName, token, venueManager]);
 
   const saveAvatar = async () => {
     if (!avatarInput) return;

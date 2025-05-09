@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login(JSON.parse(cached));
       } catch {}
     }
-  }, []);
+  }, [login]);
 
   return (
     <AuthCtx.Provider value={{ ...state, login, logout }}>
