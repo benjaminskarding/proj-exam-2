@@ -23,8 +23,6 @@ export type VenueLocation = {
   zip?: string;
   country?: string;
   continent?: string;
-  lat?: number;
-  lng?: number;
 };
 
 /*  Core */

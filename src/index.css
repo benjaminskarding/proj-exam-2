@@ -8,3 +8,13 @@
   font-weight: 400;
   font-style: normal;
 }
+
+.react-datepicker__day--booked {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+.react-datepicker__day--mine {
+  background: #bbf7d0;
+  color: #166534;
+}

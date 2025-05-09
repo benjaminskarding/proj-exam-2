@@ -1,116 +1,87 @@
-import { API_BASE, API_KEY } from "./config";
+import { getJSON, postJSON, putJSON, deleteJSON } from "./utils";
 import { Venue, NewVenue } from "../rulesets/types";
 
-// Fetch
+export const fetchVenues = () => getJSON<Venue[]>("/holidaze/venues");
 
-export async function fetchVenues(): Promise<Venue[]> {
-  const response = await fetch(`${API_BASE}/holidaze/venues`);
-  if (!response.ok) throw new Error("Failed to fetch venues");
-
-  const { data } = await response.json();
-  return data;
-}
-
-export async function fetchVenueById(
+export function fetchVenueById(
   id: string,
-  opts: { owner?: boolean; bookings?: boolean } = { owner: true }
+  opts: { owner?: boolean; bookings?: boolean } = {}
 ) {
-  const params = new URLSearchParams();
-  if (opts.owner) params.append("_owner", "true");
-  if (opts.bookings) params.append("_bookings", "true");
-
-  const res = await fetch(`${API_BASE}/holidaze/venues/${id}?${params}`);
-  if (!res.ok) throw new Error("failed to fetch venue");
-
-  const { data } = await res.json();
-  return data as Venue;
+  const params: Record<string, any> = {};
+  if (opts.owner) params._owner = true;
+  if (opts.bookings) params._bookings = true;
+  return getJSON<Venue>(`/holidaze/venues/${id}`, params);
 }
 
-export async function fetchVenuesByProfile(
+export function fetchVenuesByProfile(
   profileName: string,
   opts: { owner?: boolean; token?: string } = {}
 ) {
-  const params = opts.owner ? "?_owner=true" : "";
-  const headers: HeadersInit = {};
-
-  if (opts.token) {
-    headers["Authorization"] = `Bearer ${opts.token}`;
-    headers["X-Noroff-API-Key"] = API_KEY;
-  }
-
-  const res = await fetch(
-    `${API_BASE}/holidaze/profiles/${profileName}/venues${params}`,
-    { headers }
+  const params: Record<string, any> = {};
+  if (opts.owner) params._owner = true;
+  return getJSON<Venue[]>(
+    `/holidaze/profiles/${encodeURIComponent(profileName)}/venues`,
+    params,
+    opts.token
   );
-
-  if (!res.ok) throw new Error("failed profile‑venues");
-
-  const { data } = await res.json();
-  return data as Venue[];
 }
 
-// Create
+export function createVenuePost(body: NewVenue, token: string) {
+  return postJSON<Venue>("/holidaze/venues", body, undefined, token);
+}
 
-export async function createVenuePost(
-  body: NewVenue,
+export function updateVenuePut(
+  id: string,
+  body: Partial<NewVenue>,
   token: string
-): Promise<Venue> {
-  const res = await fetch(`${API_BASE}/holidaze/venues`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      "X-Noroff-API-Key": API_KEY,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const { errors } = await res.json().catch(() => ({}));
-    throw new Error(errors?.[0]?.message || "Could not create venue");
-  }
-
-  const { data } = await res.json();
-  return data as Venue;
+) {
+  return putJSON<Venue>(`/holidaze/venues/${id}`, body, undefined, token);
 }
 
-// Search
+export function deleteVenue(id: string, token: string) {
+  return deleteJSON(`/holidaze/venues/${id}`, undefined, token);
+}
+
+function normalise(value?: string | null): string {
+  return (value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
 export async function searchVenues(query: string): Promise<Venue[]> {
-  const res = await fetch(
-    `${API_BASE}/holidaze/venues/search?q=${encodeURIComponent(query)}`
-  );
-  if (!res.ok) throw new Error("Failed to search venues");
-  const { data } = await res.json();
-  return data;
+  const q = query.trim();
+  if (!q) return [];
+
+  const server = await getJSON<Venue[]>("/holidaze/venues/search", { q });
+
+  let local: Venue[] = [];
+  if (q.length >= 2) {
+    const SAMPLE_LIMIT = 300;
+    const sample = (await fetchVenues()).slice(0, SAMPLE_LIMIT);
+    const needle = normalise(q);
+    local = sample.filter((v) => {
+      const loc = v.location ?? {};
+      const hay =
+        normalise(loc.city) + normalise(loc.country) + normalise(loc.continent);
+      return hay.includes(needle);
+    });
+  }
+
+  const byId = new Map<string, Venue>();
+  [...server, ...local].forEach((v) => byId.set(v.id, v));
+  return Array.from(byId.values());
 }
 
-// Avatar update
-
-export async function updateAvatarUrl(
+export function updateAvatarUrl(
   profileName: string,
   avatarUrl: string,
   token: string
 ) {
-  const res = await fetch(
-    `${API_BASE}/holidaze/profiles/${encodeURIComponent(profileName)}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        "X-Noroff-API-Key": API_KEY,
-      },
-      body: JSON.stringify({
-        avatar: { url: avatarUrl, alt: profileName },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const { errors } = await res.json().catch(() => ({}));
-    throw new Error(errors?.[0]?.message ?? res.statusText);
-  }
-
-  return (await res.json()).data.avatar.url as string;
+  return putJSON<{ url: string }>(
+    `/holidaze/profiles/${encodeURIComponent(profileName)}`,
+    { avatar: { url: avatarUrl, alt: profileName } },
+    undefined,
+    token
+  ).then((a) => a.url);
 }

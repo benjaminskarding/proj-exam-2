@@ -1,12 +1,22 @@
-// api/auth.ts
 import { API_BASE } from "./config";
 
-/* ---------- helpers ---------- */
-function isNoroffMail(mail: string) {
+function isNoroffMail(mail: string): boolean {
   return /^[^@]+@stud\.noroff\.no$/i.test(mail);
 }
 
-/* ---------- REGISTER ---------- */
+async function safeFetch<T>(
+  input: RequestInfo,
+  init?: RequestInit
+): Promise<T> {
+  const res = await fetch(input, init);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message = json.errors?.[0]?.message ?? res.statusText;
+    throw new Error(message);
+  }
+  return json.data as T;
+}
+
 export type RegisterOptions = {
   name: string;
   email: string;
@@ -20,44 +30,30 @@ export type RegisterOptions = {
 };
 
 export async function registerUser(opts: RegisterOptions) {
-  /* local sanity‑checks so we fail fast */
-  if (!isNoroffMail(opts.email)) {
-    throw new Error("E‑mail must be a stud.noroff.no address");
-  }
-  if (opts.password.length < 8) {
+  if (!isNoroffMail(opts.email))
+    throw new Error("E-mail must be a stud.noroff.no address");
+  if (opts.password.length < 8)
     throw new Error("Password must be at least 8 characters");
-  }
 
-  const body = {
+  const body: Record<string, any> = {
     name: opts.name,
     email: opts.email,
     password: opts.password,
-    bio: opts.bio,
-    avatar: opts.avatarUrl
-      ? { url: opts.avatarUrl, alt: opts.avatarAlt ?? "" }
-      : undefined,
-    banner: opts.bannerUrl
-      ? { url: opts.bannerUrl, alt: opts.bannerAlt ?? "" }
-      : undefined,
     venueManager: opts.venueManager ?? false,
   };
+  if (opts.bio) body.bio = opts.bio;
+  if (opts.avatarUrl)
+    body.avatar = { url: opts.avatarUrl, alt: opts.avatarAlt ?? "" };
+  if (opts.bannerUrl)
+    body.banner = { url: opts.bannerUrl, alt: opts.bannerAlt ?? "" };
 
-  const res = await fetch(`${API_BASE}/auth/register`, {
+  return safeFetch(`${API_BASE}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (!res.ok) {
-    const { errors } = await res.json().catch(() => ({}));
-    throw new Error(errors?.[0]?.message || "Registration failed");
-  }
-
-  const { data } = await res.json();
-  return data; // newly created profile
 }
 
-/* ---------- LOGIN ---------- */
 export type LoginOptions = { email: string; password: string };
 export type LoginResponse = {
   accessToken: string;
@@ -67,17 +63,9 @@ export type LoginResponse = {
 };
 
 export async function loginUser(opts: LoginOptions): Promise<LoginResponse> {
-  const res = await fetch(`${API_BASE}/auth/login?_holidaze=true`, {
+  return safeFetch(`${API_BASE}/auth/login?_holidaze=true`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: opts.email, password: opts.password }),
+    body: JSON.stringify(opts),
   });
-
-  if (!res.ok) {
-    const { errors } = await res.json().catch(() => ({}));
-    throw new Error(errors?.[0]?.message || "Login failed");
-  }
-
-  const { data } = await res.json();
-  return data as LoginResponse;
 }

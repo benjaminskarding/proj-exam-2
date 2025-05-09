@@ -1,8 +1,8 @@
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
-import { loginUser } from "../api/auth";
-import { useAuth } from "../contexts/AuthContext";
+import { loginUser } from "../../api/auth";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function Login() {
   const nav = useNavigate();
@@ -10,24 +10,21 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPass] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const validEmail = /@((stud\.)?noroff\.no)$/i.test(email);
   const canSubmit = validEmail && password.length >= 8;
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!canSubmit) return;
+
     setLoading(true);
     setError(null);
-
     try {
-      /* -------- API call -------- */
       const res = await loginUser({ email, password });
-      console.log("LOGIN RESPONSE:", res);
 
-      /* -------- save to context -------- */
       auth.login({
         role: res.venueManager ? "manager" : "customer",
         name: res.name,
@@ -36,7 +33,6 @@ export default function Login() {
         venueManager: !!res.venueManager,
       });
 
-      /* -------- redirect -------- */
       nav("/");
     } catch (err: any) {
       setError(err.message ?? "Login failed");
@@ -57,11 +53,10 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <label className="block">
             <span className="mb-1 flex items-center gap-2 text-sm font-medium">
               <Mail className="h-4 w-4" />
-              Noroff e‑mail
+              Noroff e-mail
             </span>
             <input
               required
@@ -73,7 +68,6 @@ export default function Login() {
             />
           </label>
 
-          {/* Password */}
           <label className="block">
             <span className="mb-1 flex items-center gap-2 text-sm font-medium">
               <Lock className="h-4 w-4" />
@@ -95,7 +89,7 @@ export default function Login() {
             disabled={!canSubmit || loading}
             className="w-full rounded-lg bg-emerald-600 py-2 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
           >
-            {loading ? "Signing in…" : "Log in"}
+            {loading ? "Signing in…" : "Log in"}
           </button>
         </form>
 

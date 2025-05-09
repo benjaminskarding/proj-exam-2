@@ -1,24 +1,21 @@
 import { useState, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerUser } from "../api/auth";
+import { registerUser } from "../../api/auth";
 import { Mail, User, ImageIcon, Lock } from "lucide-react";
 
 export default function Register() {
   const nav = useNavigate();
 
-  /* ── inputs ───────────────────────────────────── */
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPass] = useState("");
   const [avatarUrl, setAvatar] = useState("");
   const [venueManager, setVenueManager] = useState(false);
 
-  /* ── ui state ─────────────────────────────────── */
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  /** Noroff address must end with @stud.noroff.no OR @noroff.no */
   const validEmail = /@((stud\.)?noroff\.no)$/i.test(email);
   const canSubmit =
     name.trim().length >= 3 && password.length >= 8 && validEmail;
@@ -74,7 +71,6 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Username */}
           <label className="block">
             <span className="mb-1 flex items-center gap-2 text-sm font-medium">
               <User className="h-4 w-4" />
@@ -89,7 +85,6 @@ export default function Register() {
             />
           </label>
 
-          {/* Email */}
           <label className="block">
             <span className="mb-1 flex items-center gap-2 text-sm font-medium">
               <Mail className="h-4 w-4" />
@@ -110,7 +105,6 @@ export default function Register() {
             )}
           </label>
 
-          {/* Password */}
           <label className="block">
             <span className="mb-1 flex items-center gap-2 text-sm font-medium">
               <Lock className="h-4 w-4" />
@@ -127,7 +121,6 @@ export default function Register() {
             />
           </label>
 
-          {/* Avatar URL */}
           <label className="block">
             <span className="mb-1 flex items-center gap-2 text-sm font-medium">
               <ImageIcon className="h-4 w-4" />
