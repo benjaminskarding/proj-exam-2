@@ -1,2 +1,2 @@
-export const API_BASE = "https://v2.api.noroff.dev";
-export const API_KEY = ";
+export const API_BASE = process.env.REACT_APP_API_BASE!;
+export const API_KEY = process.env.REACT_APP_API_KEY!;
