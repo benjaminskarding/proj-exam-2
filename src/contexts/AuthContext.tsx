@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 
 export type Role = "visitor" | "customer" | "manager";
 
@@ -20,23 +26,23 @@ const AuthCtx = createContext<AuthShape | null>(null);
 export const useAuth = () => useContext(AuthCtx)!;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  /* empty state = visitor */
-  const [state, setState] = useState<AuthShape>({
+  const [state, setState] = useState<Omit<AuthShape, "login" | "logout">>({
     role: "visitor",
     name: "",
     avatarUrl: undefined,
     token: "",
     venueManager: false,
-    login: noop,
-    logout: noop,
   });
 
-  function login(info: LoginInfo) {
+  const login = useCallback((info: LoginInfo) => {
     localStorage.setItem("auth", JSON.stringify(info));
-    setState({ ...info, venueManager: !!info.venueManager, login, logout });
-  }
+    setState({
+      ...info,
+      venueManager: !!info.venueManager,
+    });
+  }, []);
 
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem("auth");
     setState({
       role: "visitor",
@@ -44,12 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       avatarUrl: undefined,
       token: "",
       venueManager: false,
-      login,
-      logout,
     });
-  }
+  }, []);
 
-  /* restore session on reload */
   useEffect(() => {
     const cached = localStorage.getItem("auth");
     if (cached) {
@@ -65,5 +68,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthCtx.Provider>
   );
 }
-
-function noop() {}
