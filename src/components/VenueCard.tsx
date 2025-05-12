@@ -4,15 +4,26 @@ import { Link } from "react-router-dom";
 
 type Props = {
   venue: Venue;
+  /** When true, the card is non-navigable (used on “Manage Venues”) to ensure mobile compatability */
+  disableLink?: boolean;
+  /**
+   * if `disableLink` is false and this is true,
+   * only the photo is a link; otherwise the whole card is a link.
+   */
   linkOnPhotoOnly?: boolean;
 };
 
-export default function VenueCard({ venue, linkOnPhotoOnly = false }: Props) {
+export default function VenueCard({
+  venue,
+  disableLink = false,
+  linkOnPhotoOnly = false,
+}: Props) {
   const media = venue.media?.[0];
   const hasWifi = Boolean(venue.meta?.wifi);
   const rating = venue.rating?.toFixed(2) ?? "N/A";
   const city = venue.location?.city ?? "Unknown location";
 
+  /* image  */
   const photo = (
     <div className="relative aspect-[4/3]">
       <img
@@ -26,9 +37,17 @@ export default function VenueCard({ venue, linkOnPhotoOnly = false }: Props) {
     </div>
   );
 
+  /* inner */
   const cardInner = (
     <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition">
-      {linkOnPhotoOnly ? <Link to={`/venue/${venue.id}`}>{photo}</Link> : photo}
+      {disableLink ? (
+        photo
+      ) : linkOnPhotoOnly ? (
+        <Link to={`/venue/${venue.id}`}>{photo}</Link>
+      ) : (
+        photo
+      )}
+
       <div className="p-4">
         <div className="flex justify-between mb-1">
           <h3 className="font-semibold truncate max-w-[80%]">{venue.name}</h3>
@@ -49,9 +68,10 @@ export default function VenueCard({ venue, linkOnPhotoOnly = false }: Props) {
     </div>
   );
 
-  return linkOnPhotoOnly ? (
-    cardInner
-  ) : (
-    <Link to={`/venue/${venue.id}`}>{cardInner}</Link>
-  );
+  /* outer wrapper */
+  if (disableLink) return cardInner;
+  if (linkOnPhotoOnly) return cardInner;
+
+  // default: whole card links to details
+  return <Link to={`/venue/${venue.id}`}>{cardInner}</Link>;
 }

@@ -10,6 +10,7 @@ import MainLayout from "./layouts/MainLayout";
 import ManageVenues from "./pages/venues/ManageVenues";
 import CreateVenue from "./pages/venues/CreateVenue";
 import EditVenue from "./pages/venues/EditVenue";
+import SearchResults from "./pages/searchResults/SearchResults";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/manage" element={<ManageVenues />} />
             <Route path="/venues/create" element={<CreateVenue />} />
             <Route path="/venues/edit/:id" element={<EditVenue />} />
+            <Route path="/search" element={<SearchResults />} />
           </Route>
         </Routes>
       </AuthProvider>

@@ -10,10 +10,12 @@ export default function ManageVenues() {
   const { name: profileName, token, venueManager } = useAuth();
   const navigate = useNavigate();
 
+  /* auth */
   useEffect(() => {
     if (!venueManager) navigate("/");
   }, [venueManager, navigate]);
 
+  /* data  */
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,7 @@ export default function ManageVenues() {
     })();
   }, [profileName, token]);
 
+  /*  actions */
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this venue permanently?")) return;
     try {
@@ -46,6 +49,7 @@ export default function ManageVenues() {
     }
   }
 
+  /* ui */
   return (
     <div className="container mx-auto px-4 py-10 min-h-screen">
       <div className="mb-8 flex flex-col items-center justify-between">
@@ -74,8 +78,10 @@ export default function ManageVenues() {
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {venues.map((v) => (
           <div key={v.id} className="relative group">
-            <VenueCard venue={v} linkOnPhotoOnly />
+            {/* ⬇ disable all navigation on this card */}
+            <VenueCard venue={v} disableLink />
 
+            {/* overlay for EDIT / DELETE */}
             <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 pointer-events-none transition flex items-center justify-center gap-4">
               <Link
                 to={`/venues/edit/${v.id}`}

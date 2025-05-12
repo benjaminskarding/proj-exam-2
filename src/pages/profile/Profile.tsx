@@ -54,7 +54,7 @@ export default function Profile() {
           )}
         </div>
         <h1 className="text-2xl font-bold">{profileName}</h1>
-        <div className="flex flex-col items-center gap-2 w-full max-w-sm">
+        <div className="flex flex-col items-center gap-2 w-full max-w-sm px-4">
           <label className="w-full flex gap-2">
             <input
               type="url"
