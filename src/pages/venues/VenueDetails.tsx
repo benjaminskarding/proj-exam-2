@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import {
@@ -9,6 +9,7 @@ import {
   Coffee,
   PawPrint,
   ChevronLeft,
+  ArrowLeft,
 } from "lucide-react";
 import { fetchVenueById, fetchVenuesByProfile } from "../../api/venues";
 import {
@@ -41,6 +42,15 @@ export default function VenueDetails() {
   const [error, setError] = useState<string | null>(null);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
 
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  function handleScroll() {
+    const el = trackRef.current;
+    if (!el) return;
+    setActiveSlide(Math.round(el.scrollLeft / el.offsetWidth));
+  }
+
   useEffect(() => {
     if (!id || !token) return;
     let cancelled = false;
@@ -64,8 +74,6 @@ export default function VenueDetails() {
         });
         setBookedRanges(all);
         setMyRanges(mine);
-      } catch (err) {
-        console.error(err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -87,9 +95,7 @@ export default function VenueDetails() {
           token,
         });
         setHostVenues(others.filter((v) => v.id !== venue.id));
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
     })();
   }, [venue, token]);
 
@@ -166,16 +172,46 @@ export default function VenueDetails() {
   return (
     <div className="min-h-screen pb-16">
       <div className="container mx-auto px-4 py-4">
-        <Link to="/" className="inline-flex items-center text-emerald-600">
-          <ChevronLeft className="mr-1 h-4 w-4" /> Back to listings
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Listings
         </Link>
       </div>
 
       <div className="container mx-auto flex items-start justify-between px-4">
-        <h1 className="text-3xl font-bold">{venue.name}</h1>
+        <h1 className="text-3xl font-bold truncate">{venue.name}</h1>
       </div>
 
-      <div className="container mx-auto mb-8 grid grid-cols-1 md:grid-cols-4 gap-2 px-4">
+      <div className="md:hidden mb-8 -mx-4">
+        <div
+          ref={trackRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
+        >
+          {venue.media?.map((m, i) => (
+            <img
+              key={i}
+              src={m.url}
+              alt={m.alt || `${venue.name} photo ${i + 1}`}
+              className="w-full flex-shrink-0 snap-center aspect-[4/3] object-cover"
+            />
+          ))}
+        </div>
+        <div className="mt-3 flex justify-center gap-2">
+          {venue.media?.map((_, i) => (
+            <span
+              key={i}
+              className={`h-2 w-2 rounded-full transition-all ${
+                i === activeSlide ? "bg-emerald-600 scale-110" : "bg-slate-300"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="container mx-auto mb-8 px-4 hidden md:grid grid-cols-4 gap-2">
         <div className="col-span-2 row-span-2 aspect-square">
           <img
             src={venue.media?.[0]?.url}
@@ -184,7 +220,7 @@ export default function VenueDetails() {
           />
         </div>
         {venue.media?.slice(1, 5).map((m, i) => (
-          <div key={i} className="hidden md:block aspect-square relative">
+          <div key={i} className="relative aspect-square">
             <img
               src={m.url}
               alt={m.alt || `${venue.name} photo ${i + 2}`}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Star } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { fetchMyBookings, Booking } from "../../api/bookings";
 
@@ -38,9 +38,12 @@ function MyBookings() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link to="/" className="mb-8 inline-flex items-center text-emerald-600">
-        <ChevronLeft className="mr-1 h-4 w-4" />
-        Back to listings
+      <Link
+        to="/"
+        className="mb-8 inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+      >
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Back to Listings
       </Link>
 
       <h1 className="mb-8 text-3xl font-bold">My bookings</h1>

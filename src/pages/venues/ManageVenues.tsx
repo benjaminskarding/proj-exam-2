@@ -75,10 +75,10 @@ export default function ManageVenues() {
         </p>
       )}
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 items-start">
         {venues.map((v) => (
           <div key={v.id} className="relative group">
-            {/* ⬇ disable all navigation on this card */}
+            {/* disable all navigation on this card */}
             <VenueCard venue={v} disableLink />
 
             {/* overlay for EDIT / DELETE */}

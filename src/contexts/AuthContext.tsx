@@ -1,45 +1,47 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
 export type Role = "visitor" | "customer" | "manager";
 
 export type LoginInfo = {
   role: Role;
   name: string;
-  avatarUrl?: string;
   token: string;
+  avatarUrl?: string;
   venueManager?: boolean;
 };
 
-// Context expose
 type AuthShape = LoginInfo & {
-  login: (info: LoginInfo) => void;
+  login: (i: LoginInfo) => void;
   logout: () => void;
 };
 
 const AuthCtx = createContext<AuthShape | null>(null);
 export const useAuth = () => useContext(AuthCtx)!;
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<AuthShape, "login" | "logout">>({
-    role: "visitor",
-    name: "",
-    avatarUrl: undefined,
-    token: "",
-    venueManager: false,
-  });
+/* -------------------------------------------------------- */
 
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  /* initialise from localStorage once */
+  const [state, setState] = useState<Omit<AuthShape, "login" | "logout">>(
+    () => {
+      try {
+        const cached = localStorage.getItem("auth");
+        if (cached) return { ...JSON.parse(cached) } as LoginInfo;
+      } catch {}
+      return {
+        role: "visitor",
+        name: "",
+        avatarUrl: undefined,
+        token: "",
+        venueManager: false,
+      };
+    }
+  );
+
+  /*  helpers  */
   const login = useCallback((info: LoginInfo) => {
     localStorage.setItem("auth", JSON.stringify(info));
-    setState({
-      ...info,
-      venueManager: !!info.venueManager,
-    });
+    setState({ ...info, venueManager: !!info.venueManager });
   }, []);
 
   const logout = useCallback(() => {
@@ -52,15 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       venueManager: false,
     });
   }, []);
-
-  useEffect(() => {
-    const cached = localStorage.getItem("auth");
-    if (cached) {
-      try {
-        login(JSON.parse(cached));
-      } catch {}
-    }
-  }, [login]);
 
   return (
     <AuthCtx.Provider value={{ ...state, login, logout }}>

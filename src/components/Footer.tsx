@@ -3,21 +3,49 @@ import { Link } from "react-router-dom";
 function Footer() {
   return (
     <footer className="bg-emerald-800 text-white">
-      <div className="mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 px-4 py-4 sm:py-0 max-w-screen-xl">
-        <Link to="/" className="font-logo leading-none text-2xl sm:text-3xl">
-          holidaze
-        </Link>
+      <div className="max-w-screen-xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {/* Logo */}
+        <div>
+          <Link to="/" className="font-logo text-3xl leading-none">
+            holidaze
+          </Link>
+        </div>
 
-        <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-4 sm:gap-6 text-sm sm:text-lg leading-none">
-          <Link to="/login">Login</Link>
-          <Link to="/register">Register</Link>
-          <Link to="/profile">Profile</Link>
-        </nav>
+        {/* Company */}
+        <div>
+          <h3 className="font-semibold text-lg mb-2">Company</h3>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <Link to="/about">About us</Link>
+            </li>
+          </ul>
+        </div>
 
-        {/* spacer */}
-        <span className="font-logo leading-none text-2xl sm:text-3xl text-transparent select-none">
-          holidaze
-        </span>
+        {/* Support */}
+        <div>
+          <h3 className="font-semibold text-lg mb-2">Support</h3>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <Link to="/contact">Contact Us</Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Legal */}
+        <div>
+          <h3 className="font-semibold text-lg mb-2">Legal</h3>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <Link to="/terms">Terms of Service</Link>
+            </li>
+            <li>
+              <Link to="/privacy">Privacy Policy</Link>
+            </li>
+            <li>
+              <Link to="/cookies">Cookies</Link>
+            </li>
+          </ul>
+        </div>
       </div>
     </footer>
   );
