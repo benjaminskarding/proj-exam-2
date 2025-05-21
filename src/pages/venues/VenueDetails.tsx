@@ -196,7 +196,7 @@ export default function VenueDetails() {
       </div>
 
       <div className="container mx-auto flex items-start justify-between px-4">
-        <h1 className="text-3xl font-bold truncate">{venue.name}</h1>
+        <h1 className="text-3xl font-bold truncate capitalize">{venue.name}</h1>
       </div>
 
       <div className="md:hidden mb-8 overflow-hidden">
