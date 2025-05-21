@@ -3,13 +3,15 @@ import { Link, useParams } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import {
   MapPin,
-  Star,
+  StarIcon,
   Wifi,
   Car,
   Coffee,
   PawPrint,
   ChevronLeft,
   ArrowLeft,
+  Globe,
+  Home,
 } from "lucide-react";
 import { fetchVenueById, fetchVenuesByProfile } from "../../api/venues";
 import {
@@ -25,6 +27,7 @@ export default function VenueDetails() {
   const { id } = useParams<{ id: string }>();
   const { name: profileName, token } = useAuth();
 
+  // main data state
   const [venue, setVenue] = useState<Venue | null>(null);
   const [hostVenues, setHostVenues] = useState<Venue[]>([]);
   const [bookedRanges, setBookedRanges] = useState<{ from: Date; to: Date }[]>(
@@ -33,6 +36,7 @@ export default function VenueDetails() {
   const [myRanges, setMyRanges] = useState<{ from: Date; to: Date }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // booking UI state
   const today = new Date();
   const [checkIn, setCheckIn] = useState<Date | null>(null);
   const [checkOut, setCheckOut] = useState<Date | null>(null);
@@ -42,6 +46,7 @@ export default function VenueDetails() {
   const [error, setError] = useState<string | null>(null);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
 
+  // image slider tracking (mobile)
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -51,6 +56,7 @@ export default function VenueDetails() {
     setActiveSlide(Math.round(el.scrollLeft / el.offsetWidth));
   }
 
+  // load venue details + bookings
   useEffect(() => {
     if (!id || !token) return;
     let cancelled = false;
@@ -84,6 +90,7 @@ export default function VenueDetails() {
     };
   }, [id, profileName, token]);
 
+  // fetch more venues by same host
   useEffect(() => {
     if (!venue?.owner?.name || !token) return;
     const ownerName = venue.owner.name;
@@ -99,6 +106,7 @@ export default function VenueDetails() {
     })();
   }, [venue, token]);
 
+  // date utils for disabling + highlighting
   const isDayBooked = (d: Date) =>
     bookedRanges.some((r) => d >= r.from && d <= r.to);
   const bookedDays = bookedRanges.flatMap((r) =>
@@ -108,6 +116,7 @@ export default function VenueDetails() {
     eachDayOfInterval({ start: r.from, end: r.to })
   );
 
+  // submit booking
   async function handleReserve(e: React.FormEvent) {
     e.preventDefault();
     if (!id || !checkIn || !checkOut || !token) return;
@@ -132,6 +141,7 @@ export default function VenueDetails() {
       setCheckOut(null);
       setGuests(1);
 
+      // refresh booking data
       fetchBookingsForVenue(id, token).then((fresh) => {
         const all: { from: Date; to: Date }[] = [];
         const mine: { from: Date; to: Date }[] = [];
@@ -150,10 +160,11 @@ export default function VenueDetails() {
     }
   }
 
+  // loading + fallback states
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-emerald-600" />
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent border-emerald-600" />
       </div>
     );
   }
@@ -171,12 +182,13 @@ export default function VenueDetails() {
 
   return (
     <div className="min-h-screen pb-16">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 pt-10 pb-6">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Listings
+          <ArrowLeft className="h-4 w-4" />
+          Back to Listings
         </Link>
       </div>
 
@@ -184,18 +196,18 @@ export default function VenueDetails() {
         <h1 className="text-3xl font-bold truncate">{venue.name}</h1>
       </div>
 
-      <div className="md:hidden mb-8 -mx-4">
+      <div className="md:hidden mb-8 overflow-hidden">
         <div
           ref={trackRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
+          className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar w-screen"
         >
           {venue.media?.map((m, i) => (
             <img
               key={i}
               src={m.url}
               alt={m.alt || `${venue.name} photo ${i + 1}`}
-              className="w-full flex-shrink-0 snap-center aspect-[4/3] object-cover"
+              className="w-screen flex-shrink-0 snap-center aspect-[4/3] object-cover"
             />
           ))}
         </div>
@@ -241,13 +253,35 @@ export default function VenueDetails() {
       <div className="container mx-auto px-4 lg:grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <div className="mb-6 flex flex-col gap-1 text-slate-600">
+            {venue.location?.city && venue.location?.country && (
+              <span className="flex items-center capitalize">
+                <MapPin className="mr-1.5 h-4 w-4" />
+                {venue.location.city}, {venue.location.country}
+              </span>
+            )}
+
+            {(venue.location?.address || venue.location?.zip) && (
+              <span className="flex items-center capitalize">
+                <Home className="mr-1.5 h-4 w-4" />
+                {[venue.location?.address, venue.location?.zip]
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            )}
+
+            {venue.location?.continent && (
+              <span className="flex items-center capitalize">
+                <Globe className="mr-1.5 h-4 w-4" />
+                {venue.location.continent}
+              </span>
+            )}
+
             <span className="flex items-center">
-              <MapPin className="mr-1.5 h-4 w-4" /> {venue.location?.city}
-            </span>
-            <span className="flex items-center">
-              <Star className="mr-1 h-4 w-4 fill-amber-400" />{" "}
+              <StarIcon className="mr-0.5 h-4 w-4 fill-amber-400 text-amber-400" />
               {venue.rating?.toFixed(2) ?? "N/A"} ·{" "}
               <span className="underline">
+                {" "}
+                &nbsp;
                 {venue.rating ? Math.round(venue.rating * 80) : 0} reviews
               </span>
             </span>
@@ -256,6 +290,9 @@ export default function VenueDetails() {
           <h2 className="text-xl font-semibold mb-3">About this place</h2>
           <p className="mb-8 whitespace-pre-line text-slate-700">
             {venue.description}
+          </p>
+          <p className="mb-8 whitespace-pre-line text-slate-700">
+            Max guests: &nbsp;{venue.maxGuests}
           </p>
 
           <h2 className="text-xl font-semibold mb-3">What this place offers</h2>
@@ -283,14 +320,14 @@ export default function VenueDetails() {
           </ul>
         </div>
 
-        <aside className="sticky top-8 bg-white border rounded-2xl p-6 shadow-sm">
+        <aside className="bg-white border rounded-2xl p-6 shadow-sm mt-8 md:mt-0 lg:sticky lg:top-8">
           <div className="mb-5 flex items-center justify-between">
             <span className="text-3xl font-bold">
               ${venue.price}
               <span className="ml-1 text-base text-slate-500">/ night</span>
             </span>
             <span className="flex items-center text-sm">
-              <Star className="mr-1 h-4 w-4 fill-amber-400" />{" "}
+              <StarIcon className="mr-0.5 h-4 w-4 fill-amber-400 text-amber-400" />
               {venue.rating?.toFixed(2) ?? "N/A"}
             </span>
           </div>
@@ -359,7 +396,7 @@ export default function VenueDetails() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-emerald-300"
+              className="w-full py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-emerald-300 font-semibold"
             >
               {saving ? "Reserving…" : "Reserve"}
             </button>
@@ -401,7 +438,7 @@ export default function VenueDetails() {
                 <div className="p-4">
                   <h3 className="font-semibold">{v.name}</h3>
                   <div className="flex items-center text-sm text-slate-600 mt-1">
-                    <Star className="h-4 w-4 fill-amber-400 mr-0.5" />{" "}
+                    <StarIcon className="mr-0.5 h-4 w-4 fill-amber-400 text-amber-400" />
                     {v.rating?.toFixed(2) ?? "N/A"}
                   </div>
                   <p className="text-slate-500 text-sm mt-1">

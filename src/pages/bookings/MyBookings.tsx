@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, CalendarIcon } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { fetchMyBookings, Booking } from "../../api/bookings";
+import VenueCard from "../../components/VenueCard";
 
-function MyBookings() {
+export default function MyBookings() {
   const { name, token } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /* grab all bookings for the current user and sort them by start date */
   useEffect(() => {
     if (!name || !token) return;
     (async () => {
       try {
         const data = await fetchMyBookings(name, token);
-
         data.sort(
           (a, b) =>
             new Date(a.dateFrom).valueOf() - new Date(b.dateFrom).valueOf()
@@ -28,25 +29,26 @@ function MyBookings() {
     })();
   }, [name, token]);
 
+  // show a basic spinner while waiting
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-emerald-600" />
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent border-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-10">
       <Link
         to="/"
-        className="mb-8 inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+        className="mb-8 inline-flex items-center gap-2 font-medium text-emerald-600 transition-colors hover:text-emerald-700"
       >
-        <ArrowLeft className="mr-1 h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" />
         Back to Listings
       </Link>
 
-      <h1 className="mb-8 text-3xl font-bold">My bookings</h1>
+      <h1 className="mb-8 text-3xl font-bold">My Bookings</h1>
 
       {bookings.length === 0 ? (
         <p>You haven’t booked anything yet.</p>
@@ -55,40 +57,47 @@ function MyBookings() {
           {bookings.map((b) => {
             const from = new Date(b.dateFrom);
             const to = new Date(b.dateTo);
-            const nights =
-              (to.valueOf() - from.valueOf()) / (1000 * 60 * 60 * 24);
 
             return (
               <Link
                 key={b.id}
                 to={`/venue/${b.venue.id}`}
-                className="group rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition"
+                className="group relative rounded-3xl border shadow transition hover:shadow-lg"
               >
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src={b.venue.media?.[0]?.url}
-                    alt={b.venue.media?.[0]?.alt || b.venue.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
+                <VenueCard venue={b.venue} disableLink />
 
-                <div className="p-4 space-y-1">
-                  <h3 className="font-semibold line-clamp-1">{b.venue.name}</h3>
-
-                  <p className="text-sm text-slate-500">
-                    {from.toLocaleDateString()} &ndash;{" "}
-                    {to.toLocaleDateString()}
-                  </p>
-
-                  <div className="flex items-center text-sm text-slate-600">
-                    <Star className="mr-0.5 h-4 w-4 fill-amber-400 text-amber-400" />
-                    {b.venue.rating?.toFixed(2) ?? "N/A"}
+                <div className="mt-6 overflow-hidden rounded-b-3xl border-t border-slate-200 bg-white">
+                  <div className="flex items-center gap-2 border-b border-slate-200 bg-emerald-50 px-4 py-3">
+                    <CalendarIcon className="h-4 w-4 text-emerald-600" />
+                    <h3 className="font-medium text-slate-800">
+                      My Booked Dates
+                    </h3>
                   </div>
-
-                  <span className="inline-block mt-2 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                    {nights} night{nights !== 1 && "s"} · {b.guests} guest
-                    {b.guests !== 1 && "s"}
-                  </span>
+                  <ul className="divide-y divide-slate-100 text-sm text-slate-700">
+                    <li className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
+                      <div
+                        className="flex-shrink-0 rounded-full"
+                        style={{
+                          width: "8px",
+                          height: "8px",
+                          backgroundColor: "#075F47",
+                        }}
+                      />
+                      <span className="font-medium">
+                        {from.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                      <span className="mx-1.5 text-slate-400">→</span>
+                      <span className="font-medium">
+                        {to.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </li>
+                  </ul>
                 </div>
               </Link>
             );
@@ -98,5 +107,3 @@ function MyBookings() {
     </div>
   );
 }
-
-export default MyBookings;

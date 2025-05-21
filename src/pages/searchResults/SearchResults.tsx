@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import pLimit from "p-limit";
 
-import { searchVenues, fetchVenueById } from "../../api/venues";
+import { searchVenues } from "../../api/venues";
+import { isVenueAvailableForDates } from "../../utils/availabilityHelper";
+
 import { Venue } from "../../rulesets/types";
 import VenueCard from "../../components/VenueCard";
-
-function overlap(a1: Date, a2: Date, b1: Date, b2: Date) {
-  return a1 <= b2 && b1 <= a2;
-}
+import { ArrowLeft } from "lucide-react";
 
 export default function SearchResults() {
   const { search } = useLocation();
@@ -17,23 +16,29 @@ export default function SearchResults() {
 
   const term = params.get("q")?.trim() ?? "";
   const guests = Number(params.get("guests") ?? "1");
-  const checkIn = params.get("checkIn")
-    ? new Date(params.get("checkIn")!)
-    : null;
-  const checkOut = params.get("checkOut")
-    ? new Date(params.get("checkOut")!)
-    : null;
+  // parse once whenever the URL search-string changes
+  const { checkIn, checkOut } = useMemo(() => {
+    const qs = new URLSearchParams(search);
 
-  /* comp state */
+    const ciRaw = qs.get("checkIn");
+    const coRaw = qs.get("checkOut");
+
+    return {
+      checkIn: ciRaw ? new Date(ciRaw) : null,
+      checkOut: coRaw ? new Date(coRaw) : null,
+    };
+  }, [search]); // only rerun when the query-string itself changes
+
+  /* state  */
   const [all, setAll] = useState<Venue[]>([]);
   const [filtered, setFiltered] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
 
-  /* per run availability cache ─────────────── */
+  // one cache to rule them all — avoids refetching the same venue
   const availCache = useRef<Record<string, boolean>>({}).current;
 
-  /* fetch keywrod list once */
+  // run search when term or guests change
   useEffect(() => {
     if (!term) return;
     setLoading(true);
@@ -45,7 +50,7 @@ export default function SearchResults() {
     })();
   }, [term, guests]);
 
-  /* FUZZY RANKER MEMOISED */
+  // fuzzy search setup — don’t rebuild on every render
   const fuse = useMemo(
     () =>
       new Fuse(all, {
@@ -56,8 +61,9 @@ export default function SearchResults() {
     [all]
   );
 
-  /* AVAILABILITY PASS  */
+  // if date range is selected, check availability and then filter
   useEffect(() => {
+    // no dates selected → just fuzzy filter
     if (!checkIn || !checkOut) {
       setFiltered(term ? fuse.search(term).map((h) => h.item) : all);
       return;
@@ -66,35 +72,43 @@ export default function SearchResults() {
     let cancelled = false;
     setChecking(true);
 
-    const limit = pLimit(8);
+    const limit = pLimit(8); // dont overload API
     const tasks = all.map((v) =>
       limit(async () => {
         if (availCache[v.id] !== undefined) return availCache[v.id];
 
-        try {
-          const full = await fetchVenueById(v.id, { bookings: true });
-          const clash = full.bookings?.some((b: any) =>
-            overlap(new Date(b.dateFrom), new Date(b.dateTo), checkIn, checkOut)
-          );
-          return (availCache[v.id] = !clash);
-        } catch {
-          return (availCache[v.id] = true); // network hiccup -> assume OK
-        }
+        const ok = await isVenueAvailableForDates(v.id, checkIn, checkOut);
+        availCache[v.id] = ok;
+        return ok;
       })
     );
 
     Promise.all(tasks).then((flags) => {
       if (cancelled) return;
+
+      // filter the ones that are actually available
       const available = all.filter((_, i) => flags[i]);
-      setFiltered(term ? fuse.search(term).map((h) => h.item) : available);
+      // run fuzzy search again on only those
+      const final = term
+        ? new Fuse(available, {
+            threshold: 0.35,
+            ignoreLocation: true,
+            keys: ["name", "description", "location.city"],
+          })
+            .search(term)
+            .map((h) => h.item)
+        : available;
+
+      setFiltered(final);
       setChecking(false);
     });
-
+    // in case user leaves before we're done
     return () => {
-      cancelled = true; // abort if component unmounts
+      cancelled = true;
     };
-  }, [all, fuse, term, checkIn, checkOut, availCache]);
+  }, [all, term, checkIn, checkOut, availCache, fuse]);
 
+  // if no term, show message instead of blank screen
   if (!term) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -105,9 +119,19 @@ export default function SearchResults() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold mb-6">
-          {checking ? "Checking availability…" : "Results"} for&nbsp;
+      <div className="container mx-auto px-4 pt-10 pb-6">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 font-medium text-emerald-600 hover:text-emerald-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Listings
+        </Link>
+      </div>
+
+      <div className="container mx-auto px-4">
+        <h1 className="mb-6 text-3xl font-bold">
+          {checking ? "Checking availability…" : "Results"} for{" "}
           <span className="text-emerald-700">&ldquo;{term}&rdquo;</span>
         </h1>
 

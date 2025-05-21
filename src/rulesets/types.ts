@@ -25,6 +25,12 @@ export type VenueLocation = {
   continent?: string;
 };
 
+export type Booking = {
+  dateFrom: string;
+  dateTo: string;
+  customer?: { name: string };
+};
+
 /*  Core */
 
 export type Venue = {

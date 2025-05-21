@@ -1,25 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { PlusIcon, ArrowLeft, CalendarIcon } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { fetchVenuesByProfile, deleteVenue } from "../../api/venues";
 import { Venue } from "../../rulesets/types";
 import VenueCard from "../../components/VenueCard";
-import { PlusIcon } from "lucide-react";
 
 export default function ManageVenues() {
+  // auth and redirect if user isn't a venue manager
   const { name: profileName, token, venueManager } = useAuth();
   const navigate = useNavigate();
 
-  /* auth */
   useEffect(() => {
     if (!venueManager) navigate("/");
   }, [venueManager, navigate]);
 
-  /* data  */
+  // state setup
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // fetch user's venues + bookings
   useEffect(() => {
     if (!profileName) return;
     (async () => {
@@ -28,6 +29,7 @@ export default function ManageVenues() {
         const data = await fetchVenuesByProfile(profileName, {
           owner: true,
           token,
+          bookings: true,
         });
         setVenues(data);
       } catch (err: any) {
@@ -38,7 +40,7 @@ export default function ManageVenues() {
     })();
   }, [profileName, token]);
 
-  /*  actions */
+  // delete venue from backend + local state
   async function handleDelete(id: string) {
     if (!window.confirm("Delete this venue permanently?")) return;
     try {
@@ -49,25 +51,35 @@ export default function ManageVenues() {
     }
   }
 
-  /* ui */
   return (
-    <div className="container mx-auto px-4 py-10 min-h-screen">
-      <div className="mb-8 flex flex-col items-center justify-between">
-        <h1 className="text-3xl font-bold mb-8">Manage your venues</h1>
+    <div className="container mx-auto min-h-screen px-4 py-10">
+      <Link
+        to="/"
+        className="mb-6 inline-flex items-center gap-2 text-emerald-600 transition-colors hover:text-emerald-700 font-medium"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Listings
+      </Link>
+
+      {/* header and create button */}
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold">Manage Your Venues</h1>
+
         <Link
           to="/venues/create"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg"
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white transition-colors hover:bg-emerald-700"
         >
           <PlusIcon className="h-5 w-5" />
-          New venue
+          New Venue
         </Link>
       </div>
 
+      {/* states */}
       {loading && (
         <p className="text-center text-slate-500">Loading your venues…</p>
       )}
       {error && (
-        <p className="text-center text-red-600 text-sm mb-6">{error}</p>
+        <p className="mb-6 text-center text-sm text-red-600">{error}</p>
       )}
       {!loading && venues.length === 0 && (
         <p className="text-center text-slate-500">
@@ -75,29 +87,91 @@ export default function ManageVenues() {
         </p>
       )}
 
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 items-start">
-        {venues.map((v) => (
-          <div key={v.id} className="relative group">
-            {/* disable all navigation on this card */}
-            <VenueCard venue={v} disableLink />
+      {/* venue cards grid */}
+      <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {venues.map((v) => {
+          return (
+            <div
+              key={v.id}
+              className="group relative rounded-3xl border shadow transition  hover:shadow-lg"
+            >
+              <VenueCard venue={v} disableLink />
 
-            {/* overlay for EDIT / DELETE */}
-            <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 pointer-events-none transition flex items-center justify-center gap-4">
-              <Link
-                to={`/venues/edit/${v.id}`}
-                className="bg-white rounded-md px-4 py-1 text-sm font-semibold hover:bg-slate-100 pointer-events-auto"
-              >
-                Edit
-              </Link>
-              <button
-                onClick={() => handleDelete(v.id)}
-                className="bg-red-600 text-white rounded-md px-4 py-1 text-sm font-semibold hover:bg-red-700 pointer-events-auto"
-              >
-                Delete
-              </button>
+              {/* upcoming bookings */}
+              {v.bookings && v.bookings.length > 0 && (
+                <div className="mt-6 overflow-hidden rounded-b-3xl border-t border-slate-200 bg-white">
+                  <div className="flex items-center gap-2 border-b border-slate-200 bg-emerald-50 px-4 py-3">
+                    <CalendarIcon className="h-4 w-4 text-emerald-600" />
+                    <h3 className="font-medium text-slate-800">
+                      Upcoming Bookings
+                    </h3>
+                  </div>
+
+                  {/* upcoming bookings list */}
+                  <ul className="divide-y divide-slate-100 text-sm text-slate-700">
+                    {v.bookings
+                      .map((b: any) => ({
+                        from: new Date(b.dateFrom),
+                        to: new Date(b.dateTo),
+                      }))
+                      .filter((b) => b.to > new Date())
+                      .sort((a, b) => a.from.getTime() - b.from.getTime())
+                      .map((b, i) => (
+                        <li
+                          key={i}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50"
+                        >
+                          <div
+                            className="flex-shrink-0 rounded-full"
+                            style={{
+                              width: "8px",
+                              height: "8px",
+                              backgroundColor: "#075F47",
+                            }}
+                          />
+                          <span className="font-medium">
+                            {b.from.toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                          <span className="mx-1.5 text-slate-400">→</span>
+                          <span className="font-medium">
+                            {b.to.toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Hover overlay edit and delete buttons */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex h-48 items-center justify-center gap-4 rounded-t-3xl opacity-0 transition group-hover:opacity-100">
+                <Link
+                  to={`/venue/${v.id}`}
+                  className="pointer-events-auto rounded-md bg-emerald-600 px-4 py-1 text-sm font-semibold text-white hover:bg-emerald-700 inline-flex items-center gap-1.5"
+                >
+                  Go to venue
+                </Link>
+                <Link
+                  to={`/venues/edit/${v.id}`}
+                  className="pointer-events-auto rounded-md bg-white px-4 py-1 text-sm font-semibold hover:bg-slate-100"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(v.id)}
+                  className="pointer-events-auto rounded-md bg-red-600 px-4 py-1 text-sm font-semibold text-white hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

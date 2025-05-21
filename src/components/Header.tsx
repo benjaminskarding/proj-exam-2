@@ -16,7 +16,6 @@ function Header() {
         className="mx-auto flex h-14 sm:h-16 items-center justify-between
                    px-3 sm:px-6 md:px-8 max-w-screen-xl"
       >
-        {/* logo */}
         <Link
           to="/"
           className="font-logo leading-none text-2xl sm:text-3xl md:text-4xl"
@@ -24,7 +23,6 @@ function Header() {
           holidaze
         </Link>
 
-        {/* nav */}
         {role === "visitor" ? (
           <nav
             className="flex items-center
@@ -52,9 +50,15 @@ function Header() {
             </Link>
 
             {role === "manager" ? (
-              <Link to="/manage">Manage Venues</Link>
+              <Link to="/manage">
+                <span className="sm:hidden">Manage</span>
+                <span className="hidden sm:inline">Manage&nbsp;Venues</span>
+              </Link>
             ) : (
-              <Link to="/bookings">My bookings</Link>
+              <Link to="/bookings">
+                <span className="sm:hidden">Bookings</span>
+                <span className="hidden sm:inline">My&nbsp;Bookings</span>
+              </Link>
             )}
 
             <button onClick={handleLogout} className="hover:underline">
@@ -63,7 +67,6 @@ function Header() {
           </nav>
         )}
 
-        {/* spacer — hidden below md to free width */}
         <h1
           className="hidden md:block select-none font-logo
                      text-2xl md:text-4xl leading-none text-transparent"

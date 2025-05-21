@@ -3,8 +3,15 @@ import { ArrowLeft, Cookie, Settings } from "lucide-react";
 
 export default function Cookies() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-slate-100 py-16 px-4">
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="container mx-auto max-w-3xl">
+        <Link
+          to="/"
+          className="mb-8 inline-flex items-center gap-2 font-medium text-emerald-600 transition-colors hover:text-emerald-700"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Listings
+        </Link>
         <div className="relative mb-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-slate-800">
             Cookie Policy
@@ -45,16 +52,6 @@ export default function Cookies() {
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="text-center sm:text-left">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-          >
-            <ArrowLeft size={16} />
-            <span>Back to Home</span>
-          </Link>
         </div>
       </div>
 

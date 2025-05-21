@@ -16,10 +16,12 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // simple Noroff email check + minimum field validation
   const validEmail = /@((stud\.)?noroff\.no)$/i.test(email);
   const canSubmit =
     name.trim().length >= 3 && password.length >= 8 && validEmail;
 
+  // handles registration flow + UI state + redirect delay
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -44,7 +46,7 @@ export default function Register() {
       setPass("");
       setAvatar("");
 
-      // redirect after 2 s so banner is visible
+      // let the success banner sit for a sec before navigating
       setTimeout(() => nav("/login"), 2000);
     } catch (err: any) {
       setError(err.message ?? "Something went wrong");

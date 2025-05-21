@@ -13,9 +13,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // basic validation — has to be a Noroff email and a password with 8+ chars
   const validEmail = /@((stud\.)?noroff\.no)$/i.test(email);
   const canSubmit = validEmail && password.length >= 8;
 
+  // handles form submission + login + redirect
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -44,7 +46,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
-        <h1 className="mb-6 text-center text-2xl font-bold">Log in</h1>
+        <h1 className="mb-6 text-center text-2xl font-semibold">Log in</h1>
 
         {error && (
           <div className="mb-4 rounded-lg bg-red-100 px-4 py-3 text-red-700">

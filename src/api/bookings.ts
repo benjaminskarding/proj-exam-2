@@ -1,12 +1,14 @@
 import { safeJSON, authHeaders, buildUrl, fetchAllPages } from "./utils";
 import { Venue } from "../rulesets/types";
 
+// limited booking shape used for calendar blocking in venuedetails (booking page)
 export type RawBooking = {
   dateFrom: string;
   dateTo: string;
   customer?: { name: string };
 };
 
+// full booking shape
 export type Booking = {
   id: string;
   dateFrom: string;
@@ -15,6 +17,7 @@ export type Booking = {
   venue: Venue;
 };
 
+// create a booking — expects token in localStorage
 export async function createBooking(body: {
   venueId: string;
   dateFrom: string;
@@ -31,6 +34,7 @@ export async function createBooking(body: {
   );
 }
 
+// gets all bookings for the current user, with venue info included
 export function fetchMyBookings(profileName: string, token: string) {
   return fetchAllPages<Booking>(
     `/holidaze/profiles/${encodeURIComponent(profileName)}/bookings`,
@@ -40,6 +44,7 @@ export function fetchMyBookings(profileName: string, token: string) {
   );
 }
 
+// grabs all bookings for a specific venue (just dates + customer)
 export function fetchBookingsForVenue(
   venueId: string,
   token: string

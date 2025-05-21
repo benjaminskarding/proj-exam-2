@@ -1,9 +1,11 @@
 import { API_BASE } from "./config";
 
+// quick check to make sure the email ends in @stud.noroff.no (case-insensitive)
 function isNoroffMail(mail: string): boolean {
   return /^[^@]+@stud\.noroff\.no$/i.test(mail);
 }
 
+// handles fetch, parses json safely, and throws a proper error message if things fail
 async function safeFetch<T>(
   input: RequestInfo,
   init?: RequestInit
@@ -17,6 +19,7 @@ async function safeFetch<T>(
   return json.data as T;
 }
 
+// what we send when registering a user
 export type RegisterOptions = {
   name: string;
   email: string;
@@ -29,6 +32,7 @@ export type RegisterOptions = {
   venueManager?: boolean;
 };
 
+// actually register the user — makes sure email is valid and password is long enough
 export async function registerUser(opts: RegisterOptions) {
   if (!isNoroffMail(opts.email))
     throw new Error("E-mail must be a stud.noroff.no address");
@@ -41,6 +45,8 @@ export async function registerUser(opts: RegisterOptions) {
     password: opts.password,
     venueManager: opts.venueManager ?? false,
   };
+
+  // optional stuff
   if (opts.bio) body.bio = opts.bio;
   if (opts.avatarUrl)
     body.avatar = { url: opts.avatarUrl, alt: opts.avatarAlt ?? "" };
@@ -54,6 +60,7 @@ export async function registerUser(opts: RegisterOptions) {
   });
 }
 
+// what we send and get back from login
 export type LoginOptions = { email: string; password: string };
 export type LoginResponse = {
   accessToken: string;
@@ -62,6 +69,7 @@ export type LoginResponse = {
   avatar?: { url: string };
 };
 
+// log the user in and get token + profile stuff back
 export async function loginUser(opts: LoginOptions): Promise<LoginResponse> {
   return safeFetch(`${API_BASE}/auth/login?_holidaze=true`, {
     method: "POST",

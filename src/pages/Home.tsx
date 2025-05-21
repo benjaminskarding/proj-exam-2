@@ -11,7 +11,7 @@ import { useDebounce } from "use-debounce";
 import Fuse from "fuse.js";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { fetchVenues, searchVenues, fetchVenueById } from "../api/venues";
+import { fetchVenues, searchVenues } from "../api/venues";
 import { Venue } from "../rulesets/types";
 import VenueCard from "../components/VenueCard";
 import {
@@ -24,7 +24,9 @@ import {
   PlusIcon,
   MinusIcon,
 } from "lucide-react";
+import { isVenueAvailableForDates } from "../utils/availabilityHelper";
 
+// used to filter by themed categories
 type Category = "All" | "Mountain" | "Beach" | "Cabin" | "Lakefront" | "Luxury";
 
 const categories: { label: Category; icon?: React.ReactNode }[] = [
@@ -36,17 +38,13 @@ const categories: { label: Category; icon?: React.ReactNode }[] = [
   { label: "Luxury", icon: <SparklesIcon className="h-4 w-4" /> },
 ];
 
-function overlap(a1: Date, a2: Date, b1: Date, b2: Date) {
-  return a1 <= b2 && b1 <= a2;
-}
-
 export default function Home() {
   const navigate = useNavigate();
 
-  /*  data bootstrap  */
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loadingVenues, setLoadingVenues] = useState(true);
 
+  // fetch all venues once on mount
   useEffect(() => {
     (async () => {
       setLoadingVenues(true);
@@ -55,7 +53,7 @@ export default function Home() {
     })();
   }, []);
 
-  /*  search / filters */
+  // search + filters state
   const [query, setQuery] = useState("");
   const [debounced] = useDebounce(query, 300);
   const [guestsWanted, setGuestsWanted] = useState(1);
@@ -77,7 +75,7 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
 
-  /* fuse helper*/
+  // fuzzy search helper
   const fuse = useMemo(
     () =>
       new Fuse(venues, {
@@ -94,30 +92,23 @@ export default function Home() {
     [venues]
   );
 
-  /* availability helper*/
+  // cache for venue availability per session
   const availCache = useRef<Record<string, boolean>>({}).current;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // fetches detailed bookings for venue and caches result
   const isVenueAvailable = useCallback(
     async (v: Venue) => {
       if (!checkIn || !checkOut) return true;
       if (availCache[v.id] !== undefined) return availCache[v.id];
-      try {
-        const full = await fetchVenueById(v.id, { bookings: true });
-        const clash = full.bookings?.some((b: any) =>
-          overlap(new Date(b.dateFrom), new Date(b.dateTo), checkIn, checkOut)
-        );
-        availCache[v.id] = !clash;
-        return !clash;
-      } catch {
-        availCache[v.id] = true;
-        return true;
-      }
+
+      const available = await isVenueAvailableForDates(v.id, checkIn, checkOut);
+      availCache[v.id] = available;
+      return available;
     },
     [checkIn, checkOut]
   );
 
-  /* live search suggestions*/
+  // live suggestions for location/venue name search
   const [suggestions, setSuggestions] = useState<Venue[]>([]);
   const [showSug, setShowSug] = useState(false);
   const [showAllSug, setShowAllSug] = useState(false);
@@ -141,7 +132,7 @@ export default function Home() {
     };
   }, [debounced, guestsWanted, fuse]);
 
-  /* grid filter (no availability)  */
+  // static filtering by guests, category, amenities
   const baseFiltered = useMemo(() => {
     return venues.filter((v) => {
       if (v.maxGuests < guestsWanted) return false;
@@ -154,7 +145,7 @@ export default function Home() {
     });
   }, [venues, guestsWanted, category, filters]);
 
-  /* availability check on button */
+  // availability check is manual (on search click)
   const [dateFiltered, setDateFiltered] = useState<Venue[]>(baseFiltered);
   const [checking, setChecking] = useState(false);
   const [runAvail, setRunAvail] = useState(false);
@@ -195,13 +186,14 @@ export default function Home() {
   }, [dateFiltered, sortBy]);
 
   const [visibleCount, setVisible] = useState(36);
+  // popular = top 4 venues by rating
   const popular = useMemo(
     () =>
       [...venues].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 4),
     [venues]
   );
 
-  /*  navigation */
+  // sets up the /search route with query params
   const pushSearchRoute = () => {
     const qs = new URLSearchParams();
     if (debounced.trim()) qs.set("q", debounced.trim());
@@ -243,7 +235,6 @@ export default function Home() {
               onSubmit={handleSubmit}
               className="relative bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg text-slate-800 space-y-4"
             >
-              {/* WHERE */}
               <div className="relative">
                 <label className="text-sm font-medium mb-1 block">Where</label>
                 <input
@@ -285,7 +276,7 @@ export default function Home() {
                   </ul>
                 )}
               </div>
-              {/* DATES */}
+              {/* dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -321,7 +312,7 @@ export default function Home() {
                   />
                 </div>
               </div>
-              {/* GUESTS */}
+              {/* guests */}
               <div>
                 <label className="block text-sm font-medium mb-1">Guests</label>
                 <div className="flex items-center border rounded-md w-full sm:w-max">
@@ -343,11 +334,11 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-              {/* SEARCH BUTTON */}
+              {/* search button */}
               <button
                 type="submit"
                 disabled={checking}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white py-2 rounded-md"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-semibold py-2 rounded-md"
               >
                 {checking ? "Checking…" : "Search"}
               </button>
@@ -356,7 +347,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CATEGORY BAR */}
+      {/* category bar */}
       <div className="container mx-auto px-4 py-4 md:py-8 border-b">
         <div className="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8">
           {categories.map(({ label, icon }) => (
@@ -375,7 +366,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* FILTER / SORT TOGGLES */}
+      {/* filter and sort toggles */}
       <div className="flex flex-col items-center gap-4 mt-4">
         <div className="container mx-auto px-4 flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
           <button
@@ -454,7 +445,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* MAIN GRID */}
+      {/* main grid */}
       <main className="container mx-auto px-4 pb-4 flex-1">
         <h2 className="text-2xl font-bold mb-6">Featured Properties</h2>
         {loadingVenues ? (
@@ -480,7 +471,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* POPULAR */}
+      {/* popular venues */}
       <section className="container mx-auto px-4 py-12">
         <h2 className="text-2xl font-bold mb-6">Popular Venues</h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">

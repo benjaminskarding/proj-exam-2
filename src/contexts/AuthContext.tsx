@@ -15,13 +15,12 @@ type AuthShape = LoginInfo & {
   logout: () => void;
 };
 
+// core context setup
 const AuthCtx = createContext<AuthShape | null>(null);
 export const useAuth = () => useContext(AuthCtx)!;
 
-/* -------------------------------------------------------- */
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  /* initialise from localStorage once */
+  // load initial state from localStorage (only runs once)
   const [state, setState] = useState<Omit<AuthShape, "login" | "logout">>(
     () => {
       try {
@@ -38,12 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   );
 
-  /*  helpers  */
+  // sets user state + caches to localStorage
   const login = useCallback((info: LoginInfo) => {
     localStorage.setItem("auth", JSON.stringify(info));
     setState({ ...info, venueManager: !!info.venueManager });
   }, []);
 
+  // clears everything and resets to visitor mode
   const logout = useCallback(() => {
     localStorage.removeItem("auth");
     setState({
