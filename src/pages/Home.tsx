@@ -219,6 +219,7 @@ export default function Home() {
       {/* hero + search bar */}
       <div className="relative py-12 sm:py-16 md:py-24 bg-gradient-to-r from-emerald-800 to-emerald-600 text-white">
         <img
+          rel="preload"
           className="absolute inset-0 w-full h-full object-cover opacity-20"
           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1470&q=80"
           alt=""
@@ -321,6 +322,7 @@ export default function Home() {
                     disabled={guestsWanted <= 1}
                     onClick={() => setGuestsWanted((g) => Math.max(1, g - 1))}
                     className="p-2 disabled:opacity-40"
+                    aria-label="decrease amount of guests to book"
                   >
                     <MinusIcon className="h-4 w-4" />
                   </button>
@@ -329,6 +331,7 @@ export default function Home() {
                     type="button"
                     onClick={() => setGuestsWanted((g) => g + 1)}
                     className="p-2"
+                    aria-label="increase amount of guests to book"
                   >
                     <PlusIcon className="h-4 w-4" />
                   </button>
