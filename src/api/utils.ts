@@ -16,11 +16,14 @@ export function buildUrl(
 
 // standard headers — adds token if logged in
 export function authHeaders(token?: string): HeadersInit {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    "X-Noroff-API-Key": API_KEY,
-  };
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+
+  // only attach if it exists
+  if (API_KEY) headers["X-Noroff-API-Key"] = API_KEY;
+
+  // only attach if user is logged-in
   if (token) headers["Authorization"] = `Bearer ${token}`;
+
   return headers;
 }
 

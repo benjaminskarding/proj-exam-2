@@ -58,28 +58,31 @@ export default function VenueDetails() {
 
   // load venue details + bookings
   useEffect(() => {
-    if (!id || !token) return;
+    if (!id) return;
     let cancelled = false;
 
     (async () => {
       setLoading(true);
       try {
-        const [vData, bookings] = await Promise.all([
-          fetchVenueById(id),
-          fetchBookingsForVenue(id, token),
-        ]);
+        // always fetch the public venue data
+        const vData = await fetchVenueById(id);
         if (cancelled) return;
         setVenue(vData);
 
-        const all: { from: Date; to: Date }[] = [];
-        const mine: { from: Date; to: Date }[] = [];
-        bookings.forEach((b: RawBooking) => {
-          const r = { from: new Date(b.dateFrom), to: new Date(b.dateTo) };
-          all.push(r);
-          if (b.customer?.name === profileName) mine.push(r);
-        });
-        setBookedRanges(all);
-        setMyRanges(mine);
+        // fetch bookings only when the user has a token
+        if (token) {
+          const bookings = await fetchBookingsForVenue(id, token);
+
+          const all: { from: Date; to: Date }[] = [];
+          const mine: { from: Date; to: Date }[] = [];
+          bookings.forEach((b: RawBooking) => {
+            const r = { from: new Date(b.dateFrom), to: new Date(b.dateTo) };
+            all.push(r);
+            if (b.customer?.name === profileName) mine.push(r);
+          });
+          setBookedRanges(all);
+          setMyRanges(mine);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
