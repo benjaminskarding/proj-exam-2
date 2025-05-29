@@ -86,6 +86,10 @@ Colors were deliberately limited to a cool-toned palette, with emerald green (#0
 
 Responsive design is consistent throughout the project, with layout breakpoints and interactions optimized for both desktop and mobile.
 
+## Planned updates
+
+Planned updates include building out a dashboard for hosts that includes analytics on bookings, occupancy rate, and earnings. I also plan to add messaging functionality between hosts and guests to improve communication before and after bookings.
+
 ## ✍️ Author
 
 Made by Benjamin Skarding.
